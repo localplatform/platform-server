@@ -124,7 +124,7 @@ async function logout(req, res) {
 }
 
 async function validate(req, res) {
-    res.status(200).send('Access Token is valid')
+    res.status(200).json({ message: 'Access Token is valid' })
 }
 async function getUserInfos(req, res) {
     // try {

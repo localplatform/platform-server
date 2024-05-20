@@ -1,12 +1,9 @@
-import dotenv from 'dotenv'
 import { createServer } from 'http'
 import cookieParser from 'cookie-parser'
 import express, { json } from 'express'
 import cors from 'cors'
 import validateAuth from './middlewares/validateAuth.js'
 import routers from './routes/index.js'
-
-dotenv.config()
 
 const app = express()
 const allowedOrigins = [
@@ -24,4 +21,4 @@ app.use(cors({
 app.use('/config', validateAuth, routers.config)
 app.use('/auth', routers.auth)
 
-createServer(app).listen(4000, () => console.log('Dataverse running on port 4000'))
+createServer(app).listen(4000, () => console.log('Platform server running on port 4000'))

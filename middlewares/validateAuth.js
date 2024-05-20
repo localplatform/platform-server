@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import * as Models from '../sql/models.js'
 
 function verifyToken(token) {
     try {
@@ -64,6 +65,6 @@ export default async function validateAuth(req, res, next) {
         return next()
 
     } catch (error) {
-        res.status(401).json({ message: "Erreur de validation" })
+        res.status(401).json({ message: "Erreur de validation", error })
     }
 }

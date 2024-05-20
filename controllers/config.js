@@ -1,4 +1,4 @@
-import runSql from './sql.js'
+import runSql from '../sql/runSql.js'
 import underscorestring from 'underscore.string'
 const { slugify, underscored } = underscorestring
 

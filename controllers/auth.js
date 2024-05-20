@@ -1,4 +1,4 @@
-import * as Models from './models.js'
+import * as Models from '../sql/models.js'
 import * as bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
@@ -9,20 +9,7 @@ function generateToken(_userId, _expiresIn) {
         { expiresIn: _expiresIn }
     )
 }
-function verifyToken(token) {
-    try {
-        const decoded = jwt.verify(token, process.env.JSON_TOKEN_KEY)
-        return {
-            decoded: decoded,
-            validated: true
-        }
-    } catch (error) {
-        return {
-            error: error,
-            validated: false
-        }
-    }
-}
+
 
 async function addUser(req, res) {
     bcrypt.hash(req.body.password, 12)
@@ -137,50 +124,7 @@ async function logout(req, res) {
 }
 
 async function validate(req, res) {
-    const token = req.cookies['token']
-    const verificationResult = verifyToken(token)
-
-    // Si le token est invalide (mais pas expiré)
-    if (!verificationResult.validated && verificationResult.error.name !== 'TokenExpiredError') {
-        return res.status(401).json({ error: 'Unauthorized, invalid token' })
-    }
-
-    // Chercher la session correspondante au token
-    const existingSession = await Models.Sessions.findOne({
-        where: { access_token: token }
-    })
-
-    if (!existingSession || existingSession.revoked) {
-        return res.status(401).json({ error: 'Unauthorized, no session or session revoked' })
-    }
-
-    // Si le token a expiré, vérifier le refresh token
-    if (verificationResult.error && verificationResult.error.name === 'TokenExpiredError') {
-        // Vérifier si le refresh token est également expiré
-        try {
-            jwt.verify(existingSession.refresh_token, process.env.JSON_TOKEN_KEY)
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                return res.status(401).json({ error: 'Unauthorized, refresh token expired' })
-            }
-        }
-
-        // Si le refresh token est toujours valide, générer de nouveaux tokens
-        const newAccessToken = generateToken(existingSession.userid, '1h')
-        const newRefreshToken = generateToken(existingSession.userid, '7d')
-
-        // Mettre à jour la session avec les nouveaux tokens
-        await Models.Sessions.update(
-            { access_token: newAccessToken, refresh_token: newRefreshToken },
-            { where: { loginid: existingSession.loginid } }
-        )
-
-        // Envoyer le nouveau access token au client
-        res.cookie('token', newAccessToken, { httpOnly: true, secure: true, sameSite: 'Strict', domain: '.mynetwk.biz' })
-    }
-
-    // Si l'access token est valide, continuer sans renvoyer de réponse spécifique
-    return res.status(200).send('Access Token is valid')
+    res.status(200).send('Access Token is valid')
 }
 async function getUserInfos(req, res) {
     // try {

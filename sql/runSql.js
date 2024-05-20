@@ -2,7 +2,7 @@ import { Sequelize } from 'sequelize'
 
 const { SQL_SERVER, SQL_ACCOUNT, SQL_PASSWORD } = process.env
 
-export async function runSql(query, database) {
+export default async function runSql(query, database) {
     const sequelizeAdmin = new Sequelize(database, SQL_ACCOUNT, SQL_PASSWORD, {
         host: SQL_SERVER,
         dialect: 'mssql',

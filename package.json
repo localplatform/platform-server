@@ -4,7 +4,8 @@
   "description": "Provide the full platform features in one package",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index",
+    "dev": "nodemon"
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,14 @@
     "url": "https://github.com/localplatform/platform-server/issues"
   },
   "homepage": "https://github.com/localplatform/platform-server#readme",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "nodemon": "^3.1.0",
+    "sequelize": "^6.37.3",
+    "tedious": "^18.2.0"
+  }
 }

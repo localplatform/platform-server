@@ -22,9 +22,9 @@ import {
 } from '../controllers/config.js'
 
 router.get('/environments', GetEnvironments)
-router.get('/environments/:name', GetEnvironment)
+router.get('/environments/:id', GetEnvironment)
 router.post('/environments', CreateEnvironment)
-router.patch('/environments/:name', UpdateEnvironment)
+router.patch('/environments/:id', UpdateEnvironment)
 router.delete('/environments/:environment', RemoveEnvironment)
 
 router.get('/:environment/tables', GetTables)

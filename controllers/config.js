@@ -191,7 +191,6 @@ export async function CreateEnvironment(req, res) {
         console.log('Creating environment')
 
         const result = await runSql(`
-            -- Insérer l'environnement et retourner l'ID directement
             INSERT INTO dataverse.dbo.environments
             (display_name, name, ready)
             OUTPUT INSERTED.id AS EnvironmentId
@@ -286,11 +285,20 @@ export async function CreateTable(req, res) {
         if (await environmentFunctions.checkAvailability(environment) === false) {
             res.status(400).json({ error: `L'environnement n'existe pas` })
         } else {
-            if ((await runSql(`SELECT * FROM DEV_${environment}.dbo.env_tables WHERE name = '${newname}'`)).length === 1) {
+            if ((await runSql(`SELECT * FROM "${environment}_DEV".dbo.env_tables WHERE id = '${newname}'`)).length === 1) {
                 res.status(500).json({ error: `La table existe déjà` })
             } else {
+                const result = await runSql(`
+                    INSERT INTO "${environment}_DEV".dbo.env_tables
+                    (displayname, name)
+                    OUTPUT INSERTED.id AS TableId
+                    VALUES ('${displayname}', '${newname}');
+                `)
+        
+                const tableId = result[0]?.TableId
+
                 await runSql(`
-                    CREATE TABLE DEV_${environment}.dbo.${newname}
+                    CREATE TABLE "${environment}_DEV".dbo.${tableId}
                     (
                         id uniqueidentifier NOT NULL,
                         CONSTRAINT PK_${newname}_id PRIMARY KEY CLUSTERED (id),
@@ -300,10 +308,7 @@ export async function CreateTable(req, res) {
                         modifiedby nvarchar(255)
                     );
 
-                    INSERT INTO DEV_${environment}.dbo.env_tables (displayname, name)
-                    VALUES ('${displayname}', '${newname}');
-
-                    INSERT INTO DEV_${environment}.dbo.env_columns
+                    INSERT INTO "${environment}_DEV".dbo.env_columns
                     (name, displayname, datatype, required, tablename, managed)
                     VALUES
                     ('createdon', 'Créé le', 'DATE', 1, '${newname}', 1),
@@ -311,6 +316,7 @@ export async function CreateTable(req, res) {
                     ('createdby', 'Créé par', 'STRING', 1, '${newname}', 1),
                     ('modifiedby', 'Modifié par', 'STRING', 1, '${newname}', 1);
                 `)
+
 
                 await PublishCustomizations()
                 res.status(201).json({ message: `La table a été créée` })

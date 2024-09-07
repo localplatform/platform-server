@@ -8,7 +8,8 @@ import routers from './routes/index.js'
 const app = express()
 const allowedOrigins = [
     'https://dev-admin.mynetwk.biz',
-    'https://dev-auth.mynetwk.biz'
+    'https://dev-auth.mynetwk.biz',
+    'https://dev-platform-server.mynetwk.biz'
 ]
 
 app.use(cookieParser())

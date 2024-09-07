@@ -17,13 +17,14 @@ function verifyToken(token) {
 }
 
 export default async function validateAuth(req, res, next) {
-
+    
     try {
         const token = req.cookies['token']
         const verificationResult = verifyToken(token)
 
         // Si le token est invalide (mais pas expiré)
         if (!verificationResult.validated && verificationResult.error.name !== 'TokenExpiredError') {
+            console.log('error validating auth')
             return res.status(401).json({ error: 'Unauthorized, invalid token' })
         }
 

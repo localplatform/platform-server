@@ -18,8 +18,7 @@ import {
     UpdateColumn,
     RemoveColumn,
     DeployEnvironment,
-    RestoreEnvironmentVersion,
-    ValidateUserAuth
+    RestoreEnvironmentVersion
 } from '../controllers/config.js'
 
 router.get('/environments', GetEnvironments)
@@ -42,7 +41,5 @@ router.delete('/:environment/:table/:column', RemoveColumn)
 
 router.get('/deploy_environment/:environment_name', DeployEnvironment)
 router.get('/restore_environment/:environment_name', RestoreEnvironmentVersion)
-
-router.get('/validate_auth', ValidateUserAuth)
 
 export default router

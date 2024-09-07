@@ -30,6 +30,14 @@ const dataTypeMappings = {
     'CHOICE': 'nvarchar(MAX)'
 }
 const baseFunctions = {
+    SetEnvironmentsTypes: async (name) => {
+        const value = [
+            `${name}_DEV`,
+            `${name}_ACC`,
+            `${name}_PROD`
+        ]
+        return value
+    },
     RemoveEnvironment: async (name) => {
         await runSql(`
             USE master; -- pass to the master database
@@ -63,24 +71,6 @@ const baseFunctions = {
                 tablename varchar(255),
                 managed bit,
                 fieldvalues nvarchar(MAX)
-            );
-
-            CREATE TABLE ${name}.dbo.migrations_group
-            (
-                id uniqueidentifier DEFAULT NEWID() NOT NULL,
-                CONSTRAINT PK_env_tables_id PRIMARY KEY CLUSTERED (id),
-                date nvarchar(255),
-                is_deployed bit
-            );
-
-            CREATE TABLE ${name}.dbo.migrations
-            (
-                id uniqueidentifier DEFAULT NEWID() NOT NULL,
-                CONSTRAINT PK_env_tables_id PRIMARY KEY CLUSTERED (id),
-                migration_id uniqueidentifier,
-                method varchar(50),
-                scope varchar(50),
-                value nvarchar(255)
             );
         `)
     }
@@ -116,32 +106,6 @@ async function PublishCustomizations() {
             allTables: allModels
         })
     })*/
-}
-async function AddMigrationGroupStep(environment_name, step_params) {
-
-    const lastMigration = await runSql(`
-        SELECT TOP 1 FROM DEV_${environment_name}.dbo.migrations
-        WHERE is_deployed = 'false'
-    `)
-
-    let selectedSteps = []
-    if (lastMigration.length === 0) {
-        await runSql(`
-            INSERT INTO DEV_${environment_name}.dbo.migrations
-            (date, is_deployed)
-            VALUES ('${new Date()}', 0);
-        `)
-    } else {
-        selectedSteps = JSON.parse(lastMigration[0].steps)
-    }
-
-    selectedSteps.push(step_params)
-
-    await runSql(`
-        UPDATE [DEV_${environment_name}].[dbo].[migrations]
-        SET steps = '${JSON.stringify(selectedSteps)}'
-        WHERE is_deployed = 'true'
-    `)
 }
 async function BackupEnvironment(environment_name) {
 
@@ -226,21 +190,28 @@ export async function CreateEnvironment(req, res) {
     if ((await runSql(`SELECT * FROM [dataverse].[dbo].[environments] WHERE name = '${newname}'`)).length === 1) {
         res.status(400).send({ error: `L'environnement existe déjà` })
     } else {
-        await baseFunctions.PrepareEnvironment(`DEV_${newname}`)
-        await baseFunctions.PrepareEnvironment(`PROD_${newname}`)
+
+        console.log('Creating environment')
+
+        const new_environments_names = await baseFunctions.SetEnvironmentsTypes(newname)
+
+        for (const new_environment_name of new_environments_names) {
+                        
+            await baseFunctions.PrepareEnvironment(new_environment_name)
+            console.log('Created - ', new_environment_name)
+        }
 
         await runSql(`
             INSERT INTO dataverse.dbo.environments
             (display_name, name, ready)
             VALUES ('${display_name}', '${newname}', 1);
-        
-            CREATE TABLE DEV_${newname}.dbo.migrations
+
+            CREATE TABLE ${newname}_DEV.dbo.solutions
             (
                 id uniqueidentifier DEFAULT NEWID() NOT NULL,
-                CONSTRAINT PK_migrations_id PRIMARY KEY CLUSTERED (id),
+                CONSTRAINT PK_env_deployment_id PRIMARY KEY CLUSTERED (id),
                 date nvarchar(255),
-                steps nvarchar(MAX),
-                is_deployed bit
+                name nvarchar(255)
             );
         `)
         res.status(201).send()
@@ -443,9 +414,4 @@ export async function RemoveColumn(req, res) {
     `)
 
     res.send()
-}
-
-// Need to update this to use auth router instead
-export async function ValidateUserAuth(req, res) {
-    res.status(200).json('Authentication succeded')
 }

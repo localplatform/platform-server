@@ -62,7 +62,7 @@ const baseFunctions = {
 
             CREATE TABLE "${id}".dbo.env_columns
             (
-                id uniqueidentifier DEFAULT NEWID() NOT NULL,
+                id INT IDENTITY(1,1) NOT NULL,
                 CONSTRAINT PK_env_columns_id PRIMARY KEY CLUSTERED (id),
                 name varchar(255),
                 displayname nvarchar(255),

@@ -16,7 +16,16 @@ function verifyToken(token) {
     }
 }
 
+const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+    domain: '.mynetwk.biz'
+}
+
 export default async function validateAuth(req, res, next) {
+
+    console.log('Request received')
     
     try {
         const token = req.cookies['token']
@@ -59,7 +68,7 @@ export default async function validateAuth(req, res, next) {
             )
 
             // Envoyer le nouveau access token au client
-            res.cookie('token', newAccessToken, { httpOnly: true, secure: true, sameSite: 'Strict', domain: '.mynetwk.biz' })
+            res.cookie('token', newAccessToken, cookieOptions)
         }
 
         // Si l'access token est valide, continuer sans renvoyer de réponse spécifique

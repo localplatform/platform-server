@@ -17,9 +17,10 @@ import {
     UpdateTable,
     UpdateColumn,
     RemoveColumn,
-    DeployEnvironment,
-    RestoreEnvironmentVersion
+    GetServers,
 } from '../controllers/config.js'
+
+router.get('/servers', GetServers)
 
 router.get('/environments', GetEnvironments)
 router.get('/environments/:id', GetEnvironment)
@@ -38,8 +39,5 @@ router.get('/:environment/:table/:column', GetColumn)
 router.post('/:environment/:table', CreateColumn)
 router.patch('/:environment/:table/:column', UpdateColumn)
 router.delete('/:environment/:table/:column', RemoveColumn)
-
-router.get('/deploy_environment/:environment_name', DeployEnvironment)
-router.get('/restore_environment/:environment_name', RestoreEnvironmentVersion)
 
 export default router

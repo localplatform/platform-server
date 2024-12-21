@@ -10,6 +10,12 @@ function generateToken(_userId, _expiresIn) {
     )
 }
 
+const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+    domain: '.mynetwk.biz'
+}
 
 async function addUser(req, res) {
     bcrypt.hash(req.body.password, 12)
@@ -55,13 +61,6 @@ async function login(req, res) {
         const existingSession = await Models.Sessions.findOne({
             where: { userid: selected_user.userid }
         })
-
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict',
-            domain: '.mynetwk.biz'
-        }
 
         let accessToken, refreshToken
 

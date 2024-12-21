@@ -29,52 +29,6 @@ const dataTypeMappings = {
     'BOOLEAN': 'bit',
     'CHOICE': 'nvarchar(MAX)'
 }
-const baseFunctions = {
-    SetEnvironmentsTypes: async (id) => {
-        const new_environments_identifiers = [
-            `${id}_DEV`,
-            `${id}_ACC`,
-            `${id}_PROD`
-        ]
-        return { new_environments_identifiers }
-    },
-    RemoveEnvironment: async (id) => {
-        await runSql(`
-            USE master; -- pass to the master database
-
-            ALTER DATABASE ${id}
-            SET SINGLE_USER -- this will disconnect all other connections
-            WITH ROLLBACK IMMEDIATE; -- this will rollback any transaction which is running on that database
-
-            DROP DATABASE ${id};
-        `)
-    },
-    PrepareEnvironment: async (id) => {
-        await runSql(`CREATE DATABASE "${id}"`)
-        await runSql(`
-            CREATE TABLE "${id}".dbo.env_tables
-            (
-                id uniqueidentifier DEFAULT NEWID() NOT NULL,
-                CONSTRAINT PK_env_tables_id PRIMARY KEY CLUSTERED (id),
-                name nvarchar(255),
-                displayname nvarchar(255)
-            );
-
-            CREATE TABLE "${id}".dbo.env_columns
-            (
-                id INT IDENTITY(1,1) NOT NULL,
-                CONSTRAINT PK_env_columns_id PRIMARY KEY CLUSTERED (id),
-                name varchar(255),
-                displayname nvarchar(255),
-                datatype nvarchar(100),
-                required bit,
-                tablename varchar(255),
-                managed bit,
-                fieldvalues nvarchar(MAX)
-            );
-        `)
-    }
-}
 
 async function PublishCustomizations() {
     /*let allModels = []
@@ -142,14 +96,15 @@ export async function DeployEnvironment(req, res) {
     } else {
         res.status(400).send({ error: 'Aucune mise à jour à effectuer en production' })
     }
-
-
-    await baseFunctions.RemoveEnvironment()
 }
 export async function RestoreEnvironmentVersion() {
 
 }
 
+export async function GetServers(req, res) {
+    const data = await runSql(`SELECT * FROM [dataverse].[dbo].[servers]`)
+    res.status(200).send(data)
+}
 
 export async function GetEnvironments(req, res) {
     const data = await runSql(`SELECT * FROM [dataverse].[dbo].[environments]`)
@@ -199,12 +154,29 @@ export async function CreateEnvironment(req, res) {
 
         const EnvironmentId = result[0]?.EnvironmentId
 
+        await runSql(`CREATE DATABASE "${id}"`)
+        await runSql(`
+            CREATE TABLE "${EnvironmentId}".dbo.env_tables
+            (
+                id uniqueidentifier DEFAULT NEWID() NOT NULL,
+                CONSTRAINT PK_env_tables_id PRIMARY KEY CLUSTERED (id),
+                name nvarchar(255),
+                displayname nvarchar(255)
+            );
 
-        const { new_environments_identifiers } = await baseFunctions.SetEnvironmentsTypes(EnvironmentId)
-        for (const id of new_environments_identifiers) {
-            await baseFunctions.PrepareEnvironment(id)
-            console.log('Created environment - ', id)
-        }
+            CREATE TABLE "${EnvironmentId}".dbo.env_columns
+            (
+                id INT IDENTITY(1,1) NOT NULL,
+                CONSTRAINT PK_env_columns_id PRIMARY KEY CLUSTERED (id),
+                name varchar(255),
+                displayname nvarchar(255),
+                datatype nvarchar(100),
+                required bit,
+                tablename varchar(255),
+                managed bit,
+                fieldvalues nvarchar(MAX)
+            );
+        `)
 
         await runSql(`
             CREATE TABLE "${EnvironmentId}_DEV".dbo.solutions
@@ -236,12 +208,16 @@ export async function RemoveEnvironment(req, res) {
         res.status(400).json({ error: `L'environnement n'existe pas` })
     } else {
 
-        const environments_names = await baseFunctions.SetEnvironmentsTypes(environment)
+        await runSql(`
+            USE master; -- pass to the master database
 
-        for (const environment_name of environments_names.value) {
-            await baseFunctions.RemoveEnvironment(environment_name)
-            console.log('Removed environment - ', environment_name)
-        }
+            ALTER DATABASE ${environment}
+            SET SINGLE_USER -- this will disconnect all other connections
+            WITH ROLLBACK IMMEDIATE; -- this will rollback any transaction which is running on that database
+
+            DROP DATABASE ${environment};
+        `)
+        console.log('Removed environment - ', environment)
 
         await runSql(`DELETE FROM [dataverse].[dbo].[environments] WHERE name = '${environment}'`)
         await PublishCustomizations()
